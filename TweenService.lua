@@ -498,18 +498,27 @@ function Tween:Update(deltaTime)
     local runsNeeded = (tweenInfo.RepeatCount == 0) and 1 or tweenInfo.RepeatCount
     local totalTimeNeeded = tweenInfo.DelayTime + totalDuration * runsNeeded
 
-    if self.CurrentTime >= totalTimeNeeded then
-   
-        for prop, targetValue in pairs(self.Properties) do
-            self.Instance[prop] = (type(targetValue) == "table" and targetValue) or targetValue
-        end
+   if self.CurrentTime >= totalTimeNeeded then
+    
+    for prop, targetValue in pairs(self.Properties) do
+        if type(targetValue) == "table" and targetValue.type == "Vector3" then
         
-        self:Stop()
-        if self._completedCallback then
-            self._completedCallback()
+            self.Instance[prop] = createVector3(targetValue.x, targetValue.y, targetValue.z)
+        elseif type(targetValue) == "table" and targetValue.type == nil then
+      
+            self.Instance[prop] = targetValue
+        else
+          
+            self.Instance[prop] = targetValue
         end
-        return false
     end
+    
+    self:Stop()
+    if self._completedCallback then
+        self._completedCallback()
+    end
+    return false
+end
 
     
 
