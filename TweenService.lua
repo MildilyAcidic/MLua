@@ -225,11 +225,25 @@ local EasingFunctions = {
 }
 
 local function isVector3(obj)
-    return type(obj) == "userdata" and type(obj.x) == "number" and type(obj.y) == "number" and type(obj.z) == "number"
+    if type(obj) == "userdata" then
+        return pcall(function() return obj.x and obj.y and obj.z end)
+    elseif type(obj) == "table" then
+        return obj.x ~= nil and obj.y ~= nil and obj.z ~= nil
+    end
+    return false
 end
 
 local function createVector3(x, y, z)
-    return Vector3(x, y, z)
+    local success, result = pcall(function()
+        return Vector3(x, y, z)
+    end)
+    
+    if success then
+        return result
+    else
+        print("Warning: Vector3 constructor failed, using table fallback")
+        return {x = x, y = y, z = z}
+    end
 end
 
 local function lerp(a, b, t)
