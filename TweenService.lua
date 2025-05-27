@@ -30,10 +30,7 @@ Example:
 	})
 	Tween:Play()
 
-]]
-
-local TweenService = {}
-
+]] local TweenService = {}
 
 local EasingFunctions = {
     Linear = function(t)
@@ -226,7 +223,9 @@ local EasingFunctions = {
 
 local function isVector3(obj)
     if type(obj) == "userdata" then
-        return pcall(function() return obj.x and obj.y and obj.z end)
+        return pcall(function()
+            return obj.x and obj.y and obj.z
+        end)
     elseif type(obj) == "table" then
         return obj.x ~= nil and obj.y ~= nil and obj.z ~= nil
     end
@@ -237,12 +236,16 @@ local function createVector3(x, y, z)
     local success, result = pcall(function()
         return Vector3(x, y, z)
     end)
-    
+
     if success then
         return result
     else
         print("Warning: Vector3 constructor failed, using table fallback")
-        return {x = x, y = y, z = z}
+        return {
+            x = x,
+            y = y,
+            z = z
+        }
     end
 end
 
@@ -273,7 +276,7 @@ local function getEasingFunction(easingStyle, easingDirection)
             return EasingFunctions[easingStyle].In
         elseif easingDirection == "Out" then
             return EasingFunctions[easingStyle].Out
-        else 
+        else
             return EasingFunctions[easingStyle].InOut
         end
     end
@@ -301,7 +304,6 @@ local validEasingDirections = {
     InOut = true
 }
 
-
 local TweenInfo = {}
 TweenInfo.__index = TweenInfo
 
@@ -318,7 +320,6 @@ function TweenInfo.new(time, easingStyle, easingDirection, repeatCount, reverses
     return self
 end
 
-
 local Tween = {}
 Tween.__index = Tween
 
@@ -326,18 +327,15 @@ function Tween.new(instance, tweenInfo, properties)
     local self = setmetatable({}, Tween)
 
     self.Instance = instance
-    
+
     if type(tweenInfo) == "table" and getmetatable(tweenInfo) ~= TweenInfo then
-      
+
         self.TweenInfo = TweenInfo.new(tweenInfo.Time or 1, tweenInfo.EasingStyle or "Quad",
             tweenInfo.EasingDirection or "Out", tweenInfo.RepeatCount or 0, tweenInfo.Reverses or false,
             tweenInfo.DelayTime or 0)
     else
         self.TweenInfo = tweenInfo
     end
-
-    
-   
 
     self.Properties = properties
     self.InitialProperties = {}
@@ -350,39 +348,34 @@ function Tween.new(instance, tweenInfo, properties)
     for prop, targetValue in pairs(properties) do
         if instance[prop] ~= nil then
             local initialValue = instance[prop]
-          
 
-            
             if isVector3(initialValue) then
-                
+
                 self.InitialProperties[prop] = {
                     type = "Vector3",
                     x = initialValue.x,
                     y = initialValue.y,
                     z = initialValue.z
                 }
-              
+
             elseif type(initialValue) == "table" then
-                
+
                 self.InitialProperties[prop] = {}
                 for k, v in pairs(initialValue) do
                     self.InitialProperties[prop][k] = v
-                  
+
                 end
             else
-                
+
                 self.InitialProperties[prop] = initialValue
-              
+
             end
         end
     end
 
-    
-   
     for prop, targetValue in pairs(properties) do
         if isVector3(targetValue) then
-           
-            
+
             properties[prop] = {
                 type = "Vector3",
                 x = targetValue.x,
@@ -390,16 +383,15 @@ function Tween.new(instance, tweenInfo, properties)
                 z = targetValue.z
             }
         elseif type(targetValue) == "table" then
-          
+
             for k, v in pairs(targetValue) do
-           
+
             end
         else
-          
+
         end
     end
 
-    
     self.Completed = {
         Connect = function(_, callback)
             self._completedCallback = callback
@@ -414,13 +406,11 @@ function Tween.new(instance, tweenInfo, properties)
     return self
 end
 
-
 function Tween:Play()
     if self.IsPlaying then
-      
+
         return
     end
-
 
     self.IsPlaying = true
     self.StartTime = os.clock()
@@ -428,27 +418,21 @@ function Tween:Play()
     self.CompletedLoops = 0
     self.CurrentDirection = 1
 
-    
     TweenService._addActiveTween(self)
 
-    
     self:Update(0.001)
 end
 
-
 function Tween:Stop()
     if not self.IsPlaying then
-      
+
         return
     end
 
-
     self.IsPlaying = false
 
-    
     TweenService._removeActiveTween(self)
 end
-
 
 function Tween:Cancel()
     if not self.IsPlaying then
@@ -457,7 +441,6 @@ function Tween:Cancel()
 
     self:Stop()
 
-    
     for prop, value in pairs(self.InitialProperties) do
         if self.Instance[prop] ~= nil then
             self.Instance[prop] = value
@@ -465,85 +448,76 @@ function Tween:Cancel()
     end
 end
 
-
 function Tween:Update(deltaTime)
     if not self.IsPlaying then
-      
+
         return false
     end
 
     self.CurrentTime = self.CurrentTime + deltaTime
-   
 
     local tweenInfo = self.TweenInfo
-    
+
     if tweenInfo == nil then
-      
+
         return false
     end
 
-    
     local easingFunction = getEasingFunction(tweenInfo.EasingStyle, tweenInfo.EasingDirection)
     local totalDuration = tweenInfo.Time
 
     if self.CurrentTime < tweenInfo.DelayTime then
-      
+
         return true
     end
 
     local adjustedTime = self.CurrentTime - tweenInfo.DelayTime
 
-   
     local totalDuration = tweenInfo.Time
     local runsNeeded = (tweenInfo.RepeatCount == 0) and 1 or tweenInfo.RepeatCount
     local totalTimeNeeded = tweenInfo.DelayTime + totalDuration * runsNeeded
 
-   if self.CurrentTime >= totalTimeNeeded then
-    
-    for prop, targetValue in pairs(self.Properties) do
-        if type(targetValue) == "table" and targetValue.type == "Vector3" then
-        
-            self.Instance[prop] = createVector3(targetValue.x, targetValue.y, targetValue.z)
-        elseif type(targetValue) == "table" and targetValue.type == nil then
-      
-            self.Instance[prop] = targetValue
-        else
-          
-            self.Instance[prop] = targetValue
-        end
-    end
-    
-    self:Stop()
-    if self._completedCallback then
-        self._completedCallback()
-    end
-    return false
-end
+    if self.CurrentTime >= totalTimeNeeded then
 
-    
+        pcall(function()
+            for prop, targetValue in pairs(self.Properties) do
+                if type(targetValue) == "table" and targetValue.type == "Vector3" then
+
+                    self.Instance[prop] = createVector3(targetValue.x, targetValue.y, targetValue.z)
+                elseif type(targetValue) == "table" and targetValue.type == nil then
+
+                    self.Instance[prop] = targetValue
+                else
+
+                    self.Instance[prop] = targetValue
+                end
+            end
+        end)
+
+        self:Stop()
+        if self._completedCallback then
+            self._completedCallback()
+        end
+        return false
+    end
 
     local loopProgress = (adjustedTime % totalDuration) / totalDuration
 
-
     if self.CurrentDirection == -1 then
         loopProgress = 1 - loopProgress
-      
+
     end
 
     local alpha = easingFunction(loopProgress)
 
-
-   
     for prop, targetValue in pairs(self.Properties) do
         if self.Instance[prop] ~= nil and self.InitialProperties[prop] ~= nil then
             local initialValue = self.InitialProperties[prop]
 
-            
             if type(initialValue) == "table" and initialValue.type == "Vector3" and type(targetValue) == "table" and
                 (targetValue.type == "Vector3" or
                     (targetValue.x ~= nil and targetValue.y ~= nil and targetValue.z ~= nil)) then
 
-                
                 local tx, ty, tz
                 if targetValue.type == "Vector3" then
                     tx, ty, tz = targetValue.x, targetValue.y, targetValue.z
@@ -551,39 +525,31 @@ end
                     tx, ty, tz = targetValue.x, targetValue.y, targetValue.z
                 end
 
-                
                 local nx = initialValue.x + (tx - initialValue.x) * alpha
                 local ny = initialValue.y + (ty - initialValue.y) * alpha
                 local nz = initialValue.z + (tz - initialValue.z) * alpha
 
-                
                 self.Instance[prop] = createVector3(nx, ny, nz)
-               
 
-                
             elseif type(targetValue) == "table" and type(initialValue) == "table" and initialValue.type == nil then
 
-                
                 if prop == "Position" and type(self.Instance[prop]) == "table" and self.Instance[prop].x ~= nil and
                     self.Instance[prop].y ~= nil and self.Instance[prop].z ~= nil then
 
-                    
                     local newPosition = {}
                     for k, v in pairs(initialValue) do
                         if targetValue[k] ~= nil and type(v) == "number" then
                             newPosition[k] = v + (targetValue[k] - v) * alpha
-                         
+
                         else
                             newPosition[k] = v
                         end
                     end
 
-                    
                     self.Instance[prop] = newPosition
-             
 
                 else
-                    
+
                     local newValue = {}
                     for k, v in pairs(initialValue) do
                         if targetValue[k] ~= nil then
@@ -598,36 +564,33 @@ end
                     end
 
                     self.Instance[prop] = newValue
-                  
+
                 end
             else
-                
+
                 if type(initialValue) == "number" and type(targetValue) == "number" then
                     self.Instance[prop] = initialValue + (targetValue - initialValue) * alpha
-                 
+
                 else
-                    
+
                     self.Instance[prop] = targetValue
-                  
+
                 end
             end
         else
-       
+
         end
     end
 
-    
     if adjustedTime >= (self.CompletedLoops + 1) * totalDuration then
-      
+
         self.CompletedLoops = self.CompletedLoops + 1
 
-        
         if tweenInfo.Reverses then
             self.CurrentDirection = self.CurrentDirection * -1
-         
+
         end
 
-        
         local shouldStop
         if tweenInfo.RepeatCount == 0 then
             shouldStop = (self.CompletedLoops >= 1)
@@ -647,41 +610,33 @@ end
     return true
 end
 
-
 local activeTweens = {}
-
 
 function TweenService._addActiveTween(tween)
     table.insert(activeTweens, tween)
 
-
-    
     if not TweenService._updateLoopRunning then
         TweenService._startUpdateLoop()
     end
 end
 
-
 function TweenService._removeActiveTween(tween)
     for i, activeTween in ipairs(activeTweens) do
         if activeTween == tween then
             table.remove(activeTweens, i)
-           
+
             break
         end
     end
 
-    
     if #activeTweens == 0 then
         TweenService._stopUpdateLoop()
     end
 end
 
-
 TweenService._autoUpdateEnabled = true
 TweenService._lastAutoUpdateTime = 0
-TweenService._autoUpdateInterval = 0.006  --> lower increases risk of crashes, increases smoothness. if crashing, lower it to 0.03
-
+TweenService._autoUpdateInterval = 0.006 -- > lower increases risk of crashes, increases smoothness. if crashing, lower it to 0.03
 
 function TweenService._autoUpdate()
     if not TweenService._autoUpdateEnabled or not TweenService._updateLoopRunning then
@@ -695,13 +650,10 @@ function TweenService._autoUpdate()
     end
 end
 
-
 local originalWait = wait
 
-
 TweenService._lastUpdateTime = os.clock()
-TweenService._updateFrequency = 144 --> affects performance, increases smoothness. if youre expierencing crashing, lower it to 30-60 
-
+TweenService._updateFrequency = 144 -- > affects performance, increases smoothness. if youre expierencing crashing, lower it to 30-60 
 
 function TweenService._processTweens()
     local currentTime = os.clock()
@@ -719,12 +671,10 @@ function TweenService._processTweens()
         end
     end
 
-
     if #activeTweens == 0 then
         TweenService._updateLoopRunning = false
     end
 end
-
 
 function TweenService._startUpdateLoop()
 
@@ -732,34 +682,28 @@ function TweenService._startUpdateLoop()
     TweenService._lastUpdateTime = os.clock()
 end
 
-
 function TweenService._stopUpdateLoop()
 
     TweenService._updateLoopRunning = false
 end
-
 
 wait = function(seconds)
     local startTime = os.clock()
     local endTime = startTime + seconds
     local updateInterval = 1 / TweenService._updateFrequency
 
-
     if TweenService._updateLoopRunning then
         TweenService._processTweens()
     end
 
-
     while os.clock() < endTime do
         local nextUpdateTime = os.clock() + updateInterval
 
-        
         local waitTime = math.min(nextUpdateTime - os.clock(), endTime - os.clock())
         if waitTime > 0 then
             originalWait(waitTime)
         end
 
-        
         if TweenService._updateLoopRunning then
             TweenService._processTweens()
         end
@@ -768,11 +712,9 @@ wait = function(seconds)
     return os.clock() - startTime
 end
 
-
 function TweenService._update()
     TweenService._processTweens()
 end
-
 
 function TweenService.ManualUpdate()
     if TweenService._updateLoopRunning then
@@ -782,12 +724,10 @@ function TweenService.ManualUpdate()
     return false
 end
 
-
 function TweenService:Create(instance, tweenInfo, properties)
-    
+
     return Tween.new(instance, tweenInfo, properties)
 end
-
 
 TweenService.TweenInfo = TweenInfo
 
