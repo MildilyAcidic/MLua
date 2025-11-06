@@ -466,7 +466,7 @@ local function main()
     _G.IsDrawing = false
 end
 
-task.spawn(function()
+spawn(function()
     while true do
         if iskeypressed(0x20) then
             if game.Players.LocalPlayer.PlayerGui:FindFirstChild('PuzzleUI') then
