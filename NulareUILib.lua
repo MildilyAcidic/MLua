@@ -1768,4 +1768,4 @@ function UILib:Destroy()
     setrobloxinput(true)
 end
 
-_G.UILib = UILib
+return UILib
